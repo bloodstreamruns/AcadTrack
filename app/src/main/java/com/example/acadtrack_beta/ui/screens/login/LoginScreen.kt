@@ -9,7 +9,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -112,21 +111,11 @@ fun LoginScreen(
 
 
                 Button(
-                    onClick = viewModel::onLoginClicked,
-                    enabled = !uiState.isLoading,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
+                    onClick = { viewModel.onLoginClicked() },
+                    enabled = uiState.isFormValid && !uiState.isLoading,
+                    // ...
                 ) {
-                    if (uiState.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        Text("Iniciar sesión")
-                    }
+                    Text("Iniciar sesión")
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))

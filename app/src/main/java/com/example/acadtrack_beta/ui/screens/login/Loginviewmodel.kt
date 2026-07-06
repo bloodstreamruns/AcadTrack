@@ -10,8 +10,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 
-class LoginViewModel(
-) : ViewModel() {
+class LoginViewModel : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -49,9 +48,9 @@ class LoginViewModel(
             try {
                 // TODO: reemplazar con la llamada real, por ejemplo:
 
-                delay(1200) // simulación de llamada de red
+                delay(1200)
 
-                val loginExitoso = true // <- resultado real de tu backend/Auth
+                val loginExitoso = true
 
                 if (loginExitoso) {
                     _uiState.update { it.copy(isLoading = false, isLoginSuccessful = true) }
@@ -63,7 +62,7 @@ class LoginViewModel(
                         )
                     }
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _uiState.update {
                     it.copy(
                         isLoading = false,
