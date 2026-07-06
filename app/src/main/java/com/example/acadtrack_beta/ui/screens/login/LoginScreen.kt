@@ -1,5 +1,5 @@
 package com.example.acadtrack_beta.ui.screens.login
-//login
+//Login
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
