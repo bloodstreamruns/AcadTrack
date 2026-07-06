@@ -46,7 +46,6 @@ class LoginViewModel : ViewModel() {
             _uiState.update { it.copy(isLoading = true, generalError = null) }
 
             try {
-                // TODO: reemplazar con la llamada real, por ejemplo:
 
                 delay(1200)
 

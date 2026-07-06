@@ -22,10 +22,10 @@ class MainActivity : ComponentActivity() {
                     LoginScreen(
                         onLoginSuccess = {
                             Toast.makeText(this@MainActivity, "Login exitoso", Toast.LENGTH_SHORT).show()
-                            // TODO: navegar a la pantalla principal (home)
+
                         },
                         onNavigateToRegister = {
-                            // TODO: navegar a la pantalla de registro
+
                         }
                     )
                 }
