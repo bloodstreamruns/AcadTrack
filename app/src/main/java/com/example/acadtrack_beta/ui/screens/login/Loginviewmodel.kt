@@ -1,5 +1,5 @@
 package com.example.acadtrack_beta.ui.screens.login
-//parte 2 login
+//parte 2
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.delay
