@@ -87,7 +87,7 @@ fun TareaForm(
                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedAsignatura)
                     },
                     modifier = Modifier
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                         .fillMaxWidth()
                 )
                 ExposedDropdownMenu(
@@ -140,7 +140,7 @@ fun TareaForm(
                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedTipo)
                     },
                     modifier = Modifier
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                         .fillMaxWidth()
                 )
                 ExposedDropdownMenu(
@@ -174,7 +174,7 @@ fun TareaForm(
                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPrioridad)
                     },
                     modifier = Modifier
-                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                         .fillMaxWidth()
                 )
                 ExposedDropdownMenu(
@@ -226,7 +226,7 @@ fun TareaForm(
                 ?.toEpochMilli()
         )
         DatePickerDialog(
-            onDismissRequest = { mostrarDatePicker = false },
+            onDismissRequest = { },
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
@@ -235,13 +235,12 @@ fun TareaForm(
                             .toLocalDate()
                         viewModel.onFechaSeleccionada(fecha)
                     }
-                    mostrarDatePicker = false
                 }) {
                     Text("Aceptar")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { mostrarDatePicker = false }) {
+                TextButton(onClick = { }) {
                     Text("Cancelar")
                 }
             }
