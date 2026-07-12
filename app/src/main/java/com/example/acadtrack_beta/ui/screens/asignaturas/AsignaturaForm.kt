@@ -1,93 +1,72 @@
 package com.example.acadtrack_beta.ui.screens.asignaturas
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AsignaturaForm(
-    asignaturaId: String? = null,
-    onGuardadoExitoso: () -> Unit,
-    onNavigateBack: () -> Unit,
-    viewModel: AsignaturaViewModel
+    onGuardado: () -> Unit,
+    onCancelar: () -> Unit,
+    viewModel: AsignaturaViewModel = viewModel()
 ) {
     val formState by viewModel.formState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(asignaturaId) {
-        if (asignaturaId != null) {
-            viewModel.onEditarAsignatura(asignaturaId)
-        } else {
-            viewModel.onNuevaAsignatura()
-        }
-    }
-
-    LaunchedEffect(formState.isGuardadoExitoso) {
-        if (formState.isGuardadoExitoso) {
-            onGuardadoExitoso()
+    LaunchedEffect(formState.guardadoExitoso) {
+        if (formState.guardadoExitoso) {
             viewModel.consumeGuardadoExitoso()
+            viewModel.limpiarFormulario()
+            onGuardado()
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(if (formState.isEditando) "Editar asignatura" else "Nueva asignatura") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-                    }
-                }
-            )
-        }
-    ) { paddingValues ->
+    Scaffold { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
+            Text(
+                text = "Nueva asignatura",
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+
             OutlinedTextField(
                 value = formState.nombre,
                 onValueChange = viewModel::onNombreChanged,
                 label = { Text("Nombre") },
-                singleLine = true,
                 isError = formState.nombreError != null,
-                supportingText = {
-                    formState.nombreError?.let { Text(it) }
-                },
+                supportingText = { formState.nombreError?.let { Text(it) } },
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
-
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = formState.codigo,
                 onValueChange = viewModel::onCodigoChanged,
                 label = { Text("Código") },
-                singleLine = true,
                 isError = formState.codigoError != null,
-                supportingText = {
-                    formState.codigoError?.let { Text(it) }
-                },
+                supportingText = { formState.codigoError?.let { Text(it) } },
+                singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
-
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = formState.profesor,
                 onValueChange = viewModel::onProfesorChanged,
-                label = { Text("Profesor") },
+                label = { Text("Profesor (opcional)") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
-
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedTextField(
@@ -97,15 +76,23 @@ fun AsignaturaForm(
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
-
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
-                onClick = viewModel::onGuardarClicked,
-                enabled = formState.isFormValid,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Guardar")
+            Row(modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(
+                    onClick = onCancelar,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Cancelar")
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Button(
+                    onClick = viewModel::guardar,
+                    enabled = formState.isFormValid,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Guardar")
+                }
             }
         }
     }

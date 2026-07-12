@@ -6,125 +6,92 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import java.util.UUID
 
+// Almacenamiento en memoria por ahora (Room se aplica más adelante, Tema 6)
 class AsignaturaViewModel : ViewModel() {
 
-    private val _uiState = MutableStateFlow(AsignaturaUiState())
-    val uiState: StateFlow<AsignaturaUiState> = _uiState.asStateFlow()
+    private val _asignaturas = MutableStateFlow<List<Asignatura>>(emptyList())
+    val asignaturas: StateFlow<List<Asignatura>> = _asignaturas.asStateFlow()
 
-    private val _formState = MutableStateFlow(AsignaturaFormUiState())
-    val formState: StateFlow<AsignaturaFormUiState> = _formState.asStateFlow()
+    private val _formState = MutableStateFlow(AsignaturaFormState())
+    val formState: StateFlow<AsignaturaFormState> = _formState.asStateFlow()
 
-    // ---------- Listado ----------
+    private var editandoId: String? = null
 
-    fun onEliminarClicked(asignatura: Asignatura) {
-        _uiState.update { it.copy(asignaturaAEliminar = asignatura) }
+    fun onNombreChanged(valor: String) {
+        _formState.update { it.copy(nombre = valor, nombreError = null) }
     }
 
-    fun onCancelarEliminar() {
-        _uiState.update { it.copy(asignaturaAEliminar = null) }
+    fun onCodigoChanged(valor: String) {
+        _formState.update { it.copy(codigo = valor, codigoError = null) }
     }
 
-    fun onConfirmarEliminar() {
-        val asignatura = _uiState.value.asignaturaAEliminar ?: return
-        _uiState.update { state ->
-            state.copy(
-                asignaturas = state.asignaturas.filterNot { it.id == asignatura.id },
-                asignaturaAEliminar = null
-            )
-        }
-        // TODO: eliminar también de la fuente de datos persistente (Room/Firebase/etc.)
+    fun onProfesorChanged(valor: String) {
+        _formState.update { it.copy(profesor = valor) }
     }
 
-    // ---------- Formulario ----------
-
-    fun onNuevaAsignatura() {
-        _formState.value = AsignaturaFormUiState()
+    fun onSemestreChanged(valor: String) {
+        _formState.update { it.copy(semestre = valor) }
     }
 
-    fun onEditarAsignatura(id: String) {
-        val existente = _uiState.value.asignaturas.find { it.id == id }
-        _formState.value = if (existente != null) {
-            AsignaturaFormUiState(
-                id = existente.id,
-                nombre = existente.nombre,
-                codigo = existente.codigo,
-                profesor = existente.profesor,
-                semestre = existente.semestre
-            )
-        } else {
-            AsignaturaFormUiState()
-        }
+    fun cargarParaEditar(asignatura: Asignatura) {
+        editandoId = asignatura.id
+        _formState.value = AsignaturaFormState(
+            nombre = asignatura.nombre,
+            codigo = asignatura.codigo,
+            profesor = asignatura.profesor,
+            semestre = asignatura.semestre
+        )
     }
 
-    fun onNombreChanged(value: String) {
-        _formState.update {
-            it.copy(
-                nombre = value,
-                nombreError = if (value.isBlank()) "El nombre es obligatorio" else null
-            )
-        }
+    fun limpiarFormulario() {
+        editandoId = null
+        _formState.value = AsignaturaFormState()
     }
 
-    fun onCodigoChanged(value: String) {
-        _formState.update {
-            it.copy(
-                codigo = value,
-                codigoError = if (value.isBlank()) "El código es obligatorio" else null
-            )
-        }
-    }
+    fun guardar() {
+        if (!validarCampos()) return
 
-    fun onProfesorChanged(value: String) {
-        _formState.update { it.copy(profesor = value) }
-    }
+        val estado = _formState.value
+        val idActual = editandoId ?: java.util.UUID.randomUUID().toString()
+        val asignatura = Asignatura(
+            id = idActual,
+            nombre = estado.nombre.trim(),
+            codigo = estado.codigo.trim(),
+            profesor = estado.profesor.trim(),
+            semestre = estado.semestre.trim()
+        )
 
-    fun onSemestreChanged(value: String) {
-        _formState.update { it.copy(semestre = value) }
-    }
-
-    fun onGuardarClicked() {
-        val form = _formState.value
-        val nombreError = if (form.nombre.isBlank()) "El nombre es obligatorio" else null
-        val codigoError = if (form.codigo.isBlank()) "El código es obligatorio" else null
-
-        if (nombreError != null || codigoError != null) {
-            _formState.update { it.copy(nombreError = nombreError, codigoError = codigoError) }
-            return
-        }
-
-        _uiState.update { state ->
-            val listaActualizada = if (form.isEditando) {
-                state.asignaturas.map { asignatura ->
-                    if (asignatura.id == form.id) {
-                        asignatura.copy(
-                            nombre = form.nombre,
-                            codigo = form.codigo,
-                            profesor = form.profesor,
-                            semestre = form.semestre
-                        )
-                    } else {
-                        asignatura
-                    }
-                }
+        _asignaturas.update { lista ->
+            if (editandoId != null) {
+                lista.map { if (it.id == editandoId) asignatura else it }
             } else {
-                state.asignaturas + Asignatura(
-                    id = UUID.randomUUID().toString(),
-                    nombre = form.nombre,
-                    codigo = form.codigo,
-                    profesor = form.profesor,
-                    semestre = form.semestre
-                )
+                lista + asignatura
             }
-            state.copy(asignaturas = listaActualizada)
         }
-        // TODO: persistir cambios en la fuente de datos real (Room/Firebase/etc.)
 
-        _formState.update { it.copy(isGuardadoExitoso = true) }
+        _formState.update { it.copy(guardadoExitoso = true) }
+    }
+
+    fun eliminar(id: String) {
+        _asignaturas.update { lista -> lista.filterNot { it.id == id } }
     }
 
     fun consumeGuardadoExitoso() {
-        _formState.update { it.copy(isGuardadoExitoso = false) }
+        _formState.update { it.copy(guardadoExitoso = false) }
+    }
+
+    private fun validarCampos(): Boolean {
+        val estado = _formState.value
+        var esValido = true
+
+        val nombreError = if (estado.nombre.isBlank()) "El nombre es obligatorio" else null
+        if (nombreError != null) esValido = false
+
+        val codigoError = if (estado.codigo.isBlank()) "El código es obligatorio" else null
+        if (codigoError != null) esValido = false
+
+        _formState.update { it.copy(nombreError = nombreError, codigoError = codigoError) }
+        return esValido
     }
 }

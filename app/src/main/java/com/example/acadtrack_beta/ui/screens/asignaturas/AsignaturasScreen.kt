@@ -9,80 +9,59 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.acadtrack_beta.data.model.Asignatura
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AsignaturasScreen(
-    onNuevaAsignatura: () -> Unit,
-    onEditarAsignatura: (String) -> Unit,
-    viewModel: AsignaturaViewModel
+    onAgregarClick: () -> Unit,
+    onEditarClick: (Asignatura) -> Unit,
+    viewModel: AsignaturaViewModel = viewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val asignaturas by viewModel.asignaturas.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Asignaturas") })
-        },
         floatingActionButton = {
-            FloatingActionButton(onClick = onNuevaAsignatura) {
-                Icon(Icons.Filled.Add, contentDescription = "Nueva asignatura")
+            FloatingActionButton(onClick = onAgregarClick) {
+                Icon(Icons.Filled.Add, contentDescription = "Agregar asignatura")
             }
         }
     ) { paddingValues ->
-        if (uiState.asignaturas.isEmpty()) {
+        if (asignaturas.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues),
-                contentAlignment = Alignment.Center
+                contentAlignment = androidx.compose.ui.Alignment.Center
             ) {
                 Text(
-                    text = "Aún no tienes asignaturas.\nToca \"+\" para agregar una.",
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = "Aún no tienes asignaturas. Toca + para agregar una.",
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         } else {
+            // Equivalente a RecyclerView + Adapter
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(vertical = 12.dp)
             ) {
-                items(uiState.asignaturas, key = { it.id }) { asignatura ->
+                items(asignaturas, key = { it.id }) { asignatura ->
                     AsignaturaCard(
                         asignatura = asignatura,
-                        onEditar = { onEditarAsignatura(asignatura.id) },
-                        onEliminar = { viewModel.onEliminarClicked(asignatura) }
+                        onEditar = { onEditarClick(asignatura) },
+                        onEliminar = { viewModel.eliminar(asignatura.id) }
                     )
                 }
             }
         }
-    }
-
-    uiState.asignaturaAEliminar?.let { asignatura ->
-        AlertDialog(
-            onDismissRequest = viewModel::onCancelarEliminar,
-            title = { Text("Eliminar asignatura") },
-            text = { Text("¿Seguro que deseas eliminar \"${asignatura.nombre}\"? Esta acción no se puede deshacer.") },
-            confirmButton = {
-                TextButton(onClick = viewModel::onConfirmarEliminar) {
-                    Text("Eliminar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = viewModel::onCancelarEliminar) {
-                    Text("Cancelar")
-                }
-            }
-        )
     }
 }
 
@@ -97,39 +76,30 @@ private fun AsignaturaCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
+                Text(text = asignatura.nombre, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = asignatura.nombre,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = asignatura.codigo,
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = "${asignatura.codigo} · ${asignatura.semestre}",
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 if (asignatura.profesor.isNotBlank()) {
                     Text(
                         text = asignatura.profesor,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = MaterialTheme.typography.bodySmall
                     )
                 }
-                Text(
-                    text = asignatura.semestre,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
-
-            IconButton(onClick = onEditar) {
-                Icon(Icons.Filled.Edit, contentDescription = "Editar")
-            }
-            IconButton(onClick = onEliminar) {
-                Icon(Icons.Filled.Delete, contentDescription = "Eliminar")
+            Row {
+                IconButton(onClick = onEditar) {
+                    Icon(Icons.Filled.Edit, contentDescription = "Editar")
+                }
+                IconButton(onClick = onEliminar) {
+                    Icon(Icons.Filled.Delete, contentDescription = "Eliminar")
+                }
             }
         }
     }
