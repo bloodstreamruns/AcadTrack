@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import com.example.acadtrack_beta.data.repository.SesionRepository
 
 
 class LoginViewModel : ViewModel() {
@@ -52,6 +53,7 @@ class LoginViewModel : ViewModel() {
                 val loginExitoso = true
 
                 if (loginExitoso) {
+                    SesionRepository.iniciarSesion(_uiState.value.email.trim())
                     _uiState.update { it.copy(isLoading = false, isLoginSuccessful = true) }
                 } else {
                     _uiState.update {
