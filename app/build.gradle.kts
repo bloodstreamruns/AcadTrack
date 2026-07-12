@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.example.acadtrack_beta"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.example.acadtrack_beta"
