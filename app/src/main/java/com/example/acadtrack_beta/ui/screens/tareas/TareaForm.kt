@@ -1,7 +1,5 @@
 package com.example.acadtrack_beta.ui.screens.tareas
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -19,7 +17,6 @@ import com.example.acadtrack_beta.data.model.TipoTarea
 import java.time.Instant
 import java.time.ZoneOffset
 
-@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TareaForm(
