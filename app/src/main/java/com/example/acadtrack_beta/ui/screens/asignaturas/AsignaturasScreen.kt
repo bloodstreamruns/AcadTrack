@@ -22,8 +22,18 @@ fun AsignaturasScreen(
     viewModel: AsignaturaViewModel = viewModel()
 ) {
     val asignaturas by viewModel.asignaturas.collectAsStateWithLifecycle()
+    val mensajeError by viewModel.mensajeError.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(mensajeError) {
+        mensajeError?.let {
+            snackbarHostState.showSnackbar(it)
+            viewModel.consumeMensajeError()
+        }
+    }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(onClick = onAgregarClick) {
                 Icon(Icons.Filled.Add, contentDescription = "Agregar asignatura")

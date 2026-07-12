@@ -2,19 +2,22 @@ package com.example.acadtrack_beta.ui.screens.asignaturas
 
 import androidx.lifecycle.ViewModel
 import com.example.acadtrack_beta.data.model.Asignatura
+import com.example.acadtrack_beta.data.repository.TareaRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-// Almacenamiento en memoria por ahora (Room se aplica más adelante, Tema 6)
 class AsignaturaViewModel : ViewModel() {
 
-    private val _asignaturas = MutableStateFlow<List<Asignatura>>(emptyList())
-    val asignaturas: StateFlow<List<Asignatura>> = _asignaturas.asStateFlow()
+    // Ahora lee directo del repositorio compartido, no de una lista propia
+    val asignaturas: StateFlow<List<Asignatura>> = TareaRepository.asignaturas
 
     private val _formState = MutableStateFlow(AsignaturaFormState())
     val formState: StateFlow<AsignaturaFormState> = _formState.asStateFlow()
+
+    private val _mensajeError = MutableStateFlow<String?>(null)
+    val mensajeError: StateFlow<String?> = _mensajeError.asStateFlow()
 
     private var editandoId: String? = null
 
@@ -62,19 +65,19 @@ class AsignaturaViewModel : ViewModel() {
             semestre = estado.semestre.trim()
         )
 
-        _asignaturas.update { lista ->
-            if (editandoId != null) {
-                lista.map { if (it.id == editandoId) asignatura else it }
-            } else {
-                lista + asignatura
-            }
-        }
-
+        TareaRepository.guardarAsignatura(asignatura)
         _formState.update { it.copy(guardadoExitoso = true) }
     }
 
     fun eliminar(id: String) {
-        _asignaturas.update { lista -> lista.filterNot { it.id == id } }
+        val exito = TareaRepository.eliminarAsignatura(id)
+        if (!exito) {
+            _mensajeError.value = "No se puede eliminar: tiene tareas pendientes"
+        }
+    }
+
+    fun consumeMensajeError() {
+        _mensajeError.value = null
     }
 
     fun consumeGuardadoExitoso() {
