@@ -115,7 +115,7 @@ private fun ResumenCard(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
+
 @Composable
 private fun TareaPendienteCard(
     item: TareaConAsignatura,
