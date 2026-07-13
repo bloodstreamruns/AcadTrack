@@ -1,63 +1,78 @@
 package com.example.acadtrack_beta.data.repository
 
+import android.content.Context
+import com.example.acadtrack_beta.data.local.AppDatabase
 import com.example.acadtrack_beta.data.model.Asignatura
 import com.example.acadtrack_beta.data.model.Tarea
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
-// Singleton en memoria (mismo patrón que Room usará más adelante, Tema 6 - 16.1)
-// Fuente única de datos compartida entre AsignaturaViewModel y TareaViewModel
+// Fuente única de datos para Asignaturas y Tareas, ahora respaldada por Room
+// (antes vivían solo en un MutableStateFlow en memoria).
 object TareaRepository {
 
-    private val _asignaturas = MutableStateFlow<List<Asignatura>>(emptyList())
-    val asignaturas: StateFlow<List<Asignatura>> = _asignaturas.asStateFlow()
+    private lateinit var database: AppDatabase
+    private val repositorioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    private val _tareas = MutableStateFlow<List<Tarea>>(emptyList())
-    val tareas: StateFlow<List<Tarea>> = _tareas.asStateFlow()
-
-    // ---- Asignaturas ----
-
-    fun getAllAsignaturas(): List<Asignatura> = _asignaturas.value
-
-    fun guardarAsignatura(asignatura: Asignatura) {
-        _asignaturas.update { lista ->
-            if (lista.any { it.id == asignatura.id }) {
-                lista.map { if (it.id == asignatura.id) asignatura else it }
-            } else {
-                lista + asignatura
-            }
+    fun init(context: Context) {
+        if (!::database.isInitialized) {
+            database = AppDatabase.obtenerBaseDatos(context)
         }
     }
 
-    // Devuelve false si no se pudo eliminar (tiene tareas pendientes)
+    // "by lazy": se calcula la primera vez que algo lee este StateFlow,
+    // y para entonces init() ya corrió desde Application.onCreate().
+    val asignaturas: StateFlow<List<Asignatura>> by lazy {
+        database.asignaturaDao().obtenerTodas()
+            .stateIn(repositorioScope, SharingStarted.Eagerly, emptyList())
+    }
+
+    val tareas: StateFlow<List<Tarea>> by lazy {
+        database.tareaDao().obtenerTodas()
+            .stateIn(repositorioScope, SharingStarted.Eagerly, emptyList())
+    }
+
+    // ---- Asignaturas ---- (mismos nombres de función que antes, nadie más se toca)
+
+    fun getAllAsignaturas(): List<Asignatura> = asignaturas.value
+
+    fun guardarAsignatura(asignatura: Asignatura) {
+        repositorioScope.launch {
+            database.asignaturaDao().insertarOActualizar(asignatura)
+        }
+    }
+
     fun eliminarAsignatura(id: String): Boolean {
-        val tienePendientes = _tareas.value.any { it.asignaturaId == id && !it.completada }
+        val tienePendientes = tareas.value.any { it.asignaturaId == id && !it.completada }
         if (tienePendientes) return false
 
-        _asignaturas.update { lista -> lista.filterNot { it.id == id } }
+        repositorioScope.launch {
+            database.asignaturaDao().eliminarPorId(id)
+        }
         return true
     }
 
     // ---- Tareas ----
 
-    fun getAllTareas(): List<Tarea> = _tareas.value
+    fun getAllTareas(): List<Tarea> = tareas.value
 
     fun getTareasPorAsignatura(asignaturaId: String): List<Tarea> =
-        _tareas.value.filter { it.asignaturaId == asignaturaId }
+        tareas.value.filter { it.asignaturaId == asignaturaId }
 
     fun guardarTarea(tarea: Tarea) {
-        _tareas.update { lista ->
-            if (lista.any { it.id == tarea.id }) {
-                lista.map { if (it.id == tarea.id) tarea else it }
-            } else {
-                lista + tarea
-            }
+        repositorioScope.launch {
+            database.tareaDao().insertarOActualizar(tarea)
         }
     }
 
     fun eliminarTarea(id: String) {
-        _tareas.update { lista -> lista.filterNot { it.id == id } }
+        repositorioScope.launch {
+            database.tareaDao().eliminarPorId(id)
+        }
     }
 }

@@ -226,7 +226,7 @@ fun TareaForm(
                 ?.toEpochMilli()
         )
         DatePickerDialog(
-            onDismissRequest = { },
+            onDismissRequest = { mostrarDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
@@ -235,12 +235,13 @@ fun TareaForm(
                             .toLocalDate()
                         viewModel.onFechaSeleccionada(fecha)
                     }
+                    mostrarDatePicker = false
                 }) {
                     Text("Aceptar")
                 }
             },
             dismissButton = {
-                TextButton(onClick = { }) {
+                TextButton(onClick = { mostrarDatePicker = false }) {
                     Text("Cancelar")
                 }
             }

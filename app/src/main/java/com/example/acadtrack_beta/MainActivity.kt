@@ -1,11 +1,12 @@
 package com.example.acadtrack_beta
 
-
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
@@ -13,13 +14,16 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Home
 
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -27,6 +31,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.acadtrack_beta.data.repository.SesionRepository
 import com.example.acadtrack_beta.ui.screens.asignaturas.AsignaturaForm
 import com.example.acadtrack_beta.ui.screens.asignaturas.AsignaturaViewModel
 import com.example.acadtrack_beta.ui.screens.asignaturas.AsignaturasScreen
@@ -67,120 +72,133 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            val navController = rememberNavController()
+            // Esperamos a que SesionRepository termine de leer DataStore antes
+            // de decidir si arrancamos en Login o directo en Home.
+            val sesionLista by SesionRepository.sesionCargada.collectAsStateWithLifecycle()
 
-            // ViewModels compartidos a nivel de Activity: la misma instancia
-            // se usa en el listado y en el formulario de cada feature, para
-            // que cargarParaEditar()/limpiarFormulario() surtan efecto en ambos.
-            val asignaturaViewModel: AsignaturaViewModel = viewModel()
-            val tareaViewModel: TareaViewModel = viewModel()
+            if (!sesionLista) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                val emailUsuario by SesionRepository.emailUsuario.collectAsStateWithLifecycle()
+                val destinoInicial = if (emailUsuario != null) Rutas.HOME else Rutas.LOGIN
 
-            val backStackEntry by navController.currentBackStackEntryAsState()
-            val rutaActual = backStackEntry?.destination?.hierarchy?.firstOrNull()?.route
-            val mostrarBarraInferior = destinosBarra.any { it.ruta == rutaActual }
+                val navController = rememberNavController()
 
-            Scaffold(
-                modifier = Modifier,
-                bottomBar = {
-                    if (mostrarBarraInferior) {
-                        NavigationBar {
-                            destinosBarra.forEach { destino ->
-                                NavigationBarItem(
-                                    selected = rutaActual == destino.ruta,
-                                    onClick = {
-                                        navController.navigate(destino.ruta) {
-                                            popUpTo(navController.graph.findStartDestination().id) {
-                                                saveState = true
+                // ViewModels compartidos a nivel de Activity: la misma instancia
+                // se usa en el listado y en el formulario de cada feature, para
+                // que cargarParaEditar()/limpiarFormulario() surtan efecto en ambos.
+                val asignaturaViewModel: AsignaturaViewModel = viewModel()
+                val tareaViewModel: TareaViewModel = viewModel()
+
+                val backStackEntry by navController.currentBackStackEntryAsState()
+                val rutaActual = backStackEntry?.destination?.hierarchy?.firstOrNull()?.route
+                val mostrarBarraInferior = destinosBarra.any { it.ruta == rutaActual }
+
+                Scaffold(
+                    modifier = Modifier,
+                    bottomBar = {
+                        if (mostrarBarraInferior) {
+                            NavigationBar {
+                                destinosBarra.forEach { destino ->
+                                    NavigationBarItem(
+                                        selected = rutaActual == destino.ruta,
+                                        onClick = {
+                                            navController.navigate(destino.ruta) {
+                                                popUpTo(navController.graph.findStartDestination().id) {
+                                                    saveState = true
+                                                }
+                                                launchSingleTop = true
+                                                restoreState = true
                                             }
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
-                                    },
-                                    icon = { Icon(destino.icono, contentDescription = destino.label) },
-                                    label = { Text(destino.label) }
-                                )
+                                        },
+                                        icon = { Icon(destino.icono, contentDescription = destino.label) },
+                                        label = { Text(destino.label) }
+                                    )
+                                }
                             }
                         }
                     }
-                }
-            ) { innerPadding ->
-                NavHost(
-                    navController = navController,
-                    startDestination = Rutas.LOGIN,
-                    modifier = Modifier.padding(innerPadding)
-                ) {
-                    composable(Rutas.LOGIN) {
-                        LoginScreen(
-                            onLoginSuccess = {
-                                navController.navigate(Rutas.HOME) {
-                                    popUpTo(Rutas.LOGIN) { inclusive = true }
+                ) { innerPadding ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = destinoInicial,
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        composable(Rutas.LOGIN) {
+                            LoginScreen(
+                                onLoginSuccess = {
+                                    navController.navigate(Rutas.HOME) {
+                                        popUpTo(Rutas.LOGIN) { inclusive = true }
+                                    }
+                                },
+                                onNavigateToRegister = {}
+                            )
+                        }
+
+                        composable(Rutas.HOME) {
+                            HomeScreen(
+                                onVerTareaClick = { tarea ->
+                                    tareaViewModel.cargarParaEditar(tarea)
+                                    navController.navigate(Rutas.TAREA_FORM)
                                 }
-                            },
-                            onNavigateToRegister = {}
-                        )
-                    }
+                            )
+                        }
 
-                    composable(Rutas.HOME) {
-                        HomeScreen(
-                            onVerTareaClick = { tarea ->
-                                tareaViewModel.cargarParaEditar(tarea)
-                                navController.navigate(Rutas.TAREA_FORM)
-                            }
-                        )
-                    }
+                        composable(Rutas.ASIGNATURAS) {
+                            AsignaturasScreen(
+                                onAgregarClick = {
+                                    asignaturaViewModel.limpiarFormulario()
+                                    navController.navigate(Rutas.ASIGNATURA_FORM)
+                                },
+                                onEditarClick = { asignatura ->
+                                    asignaturaViewModel.cargarParaEditar(asignatura)
+                                    navController.navigate(Rutas.ASIGNATURA_FORM)
+                                },
+                                viewModel = asignaturaViewModel
+                            )
+                        }
 
-                    composable(Rutas.ASIGNATURAS) {
-                        AsignaturasScreen(
-                            onAgregarClick = {
-                                asignaturaViewModel.limpiarFormulario()
-                                navController.navigate(Rutas.ASIGNATURA_FORM)
-                            },
-                            onEditarClick = { asignatura ->
-                                asignaturaViewModel.cargarParaEditar(asignatura)
-                                navController.navigate(Rutas.ASIGNATURA_FORM)
-                            },
-                            viewModel = asignaturaViewModel
-                        )
-                    }
+                        composable(Rutas.ASIGNATURA_FORM) {
+                            AsignaturaForm(
+                                onGuardado = { navController.popBackStack() },
+                                onCancelar = { navController.popBackStack() },
+                                viewModel = asignaturaViewModel
+                            )
+                        }
 
-                    composable(Rutas.ASIGNATURA_FORM) {
-                        AsignaturaForm(
-                            onGuardado = { navController.popBackStack() },
-                            onCancelar = { navController.popBackStack() },
-                            viewModel = asignaturaViewModel
-                        )
-                    }
+                        composable(Rutas.TAREAS) {
+                            TareasScreen(
+                                onAgregarClick = {
+                                    tareaViewModel.limpiarFormulario()
+                                    navController.navigate(Rutas.TAREA_FORM)
+                                },
+                                onEditarClick = { tarea ->
+                                    tareaViewModel.cargarParaEditar(tarea)
+                                    navController.navigate(Rutas.TAREA_FORM)
+                                },
+                                viewModel = tareaViewModel
+                            )
+                        }
 
-                    composable(Rutas.TAREAS) {
-                        TareasScreen(
-                            onAgregarClick = {
-                                tareaViewModel.limpiarFormulario()
-                                navController.navigate(Rutas.TAREA_FORM)
-                            },
-                            onEditarClick = { tarea ->
-                                tareaViewModel.cargarParaEditar(tarea)
-                                navController.navigate(Rutas.TAREA_FORM)
-                            },
-                            viewModel = tareaViewModel
-                        )
-                    }
+                        composable(Rutas.TAREA_FORM) {
+                            TareaForm(
+                                onGuardado = { navController.popBackStack() },
+                                onCancelar = { navController.popBackStack() },
+                                viewModel = tareaViewModel
+                            )
+                        }
 
-                    composable(Rutas.TAREA_FORM) {
-                        TareaForm(
-                            onGuardado = { navController.popBackStack() },
-                            onCancelar = { navController.popBackStack() },
-                            viewModel = tareaViewModel
-                        )
-                    }
-
-                    composable(Rutas.PERFIL) {
-                        PerfilScreen(
-                            onCerrarSesion = {
-                                navController.navigate(Rutas.LOGIN) {
-                                    popUpTo(0) { inclusive = true }
+                        composable(Rutas.PERFIL) {
+                            PerfilScreen(
+                                onCerrarSesion = {
+                                    navController.navigate(Rutas.LOGIN) {
+                                        popUpTo(0) { inclusive = true }
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
                     }
                 }
             }
