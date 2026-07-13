@@ -138,12 +138,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         composable(Rutas.HOME) {
-                            HomeScreen(
-                                onVerTareaClick = { tarea ->
-                                    tareaViewModel.cargarParaEditar(tarea)
-                                    navController.navigate(Rutas.TAREA_FORM)
-                                }
-                            )
+                            HomeScreen()
                         }
 
                         composable(Rutas.ASIGNATURAS) {

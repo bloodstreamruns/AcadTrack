@@ -11,15 +11,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.acadtrack_beta.data.model.Tarea
-
 
 @Composable
 fun HomeScreen(
-    onVerTareaClick: (Tarea) -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var tareaSeleccionada by remember { mutableStateOf<TareaConAsignatura?>(null) }
 
     Scaffold { paddingValues ->
         Column(
@@ -77,13 +75,20 @@ fun HomeScreen(
                     items(uiState.tareasPendientes, key = { it.tarea.id }) { item ->
                         TareaPendienteCard(
                             item = item,
-                            onClick = { onVerTareaClick(item.tarea) },
+                            onClick = { tareaSeleccionada = item },
                             onToggleCompletada = { viewModel.marcarCompletada(item.tarea, it) }
                         )
                     }
                 }
             }
         }
+    }
+
+    tareaSeleccionada?.let { item ->
+        DetalleTareaDialog(
+            item = item,
+            onDismiss = { tareaSeleccionada = null }
+        )
     }
 }
 
@@ -114,7 +119,6 @@ private fun ResumenCard(
         }
     }
 }
-
 
 @Composable
 private fun TareaPendienteCard(
@@ -152,5 +156,72 @@ private fun TareaPendienteCard(
                 AssistChip(onClick = {}, label = { Text("Atrasada") })
             }
         }
+    }
+}
+
+// Ventana de solo lectura: mostrar detalles, no editar.
+// Editar solo está disponible desde la pantalla de Tareas.
+@Composable
+private fun DetalleTareaDialog(
+    item: TareaConAsignatura,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Cerrar") }
+        },
+        title = { Text(item.tarea.titulo) },
+        text = {
+            Column {
+                DetalleFila("Asignatura", item.nombreAsignatura)
+                DetalleFila("Fecha de entrega", item.tarea.fechaEntrega.toLocalDate().toString())
+                DetalleFila("Tipo", item.tarea.tipo.name)
+                DetalleFila("Prioridad", item.tarea.prioridad.name)
+                DetalleFila(
+                    "Estado",
+                    when {
+                        item.tarea.completada -> "Completada"
+                        item.atrasada -> "Atrasada"
+                        else -> "Pendiente"
+                    }
+                )
+
+                if (item.tarea.descripcion.isNotBlank()) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "Descripción",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(item.tarea.descripcion, style = MaterialTheme.typography.bodyMedium)
+                }
+
+                if (item.tarea.notas.isNotBlank()) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "Notas",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(item.tarea.notas, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun DetalleFila(etiqueta: String, valor: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            etiqueta,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(valor, style = MaterialTheme.typography.bodySmall)
     }
 }
