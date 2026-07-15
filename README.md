@@ -55,4 +55,4 @@ Proyecto académico en desarrollo. El login actualmente solo valida formato, no 
 
 ## Autor
 
-Desarrollado como proyecto de la asignatura de Desarrollo Móvil.
+Desarrollado como proyecto de la asignatura de Programación Móvil por Ashley Merlo y Daniel Sánchez.
