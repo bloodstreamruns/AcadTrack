@@ -12,8 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-// Fuente única de datos para Asignaturas y Tareas, ahora respaldada por Room
-// (antes vivían solo en un MutableStateFlow en memoria).
+// Fuente única de datos para Asignaturas y Tareas, respaldada por Room
 object TareaRepository {
 
     private lateinit var database: AppDatabase
@@ -25,8 +24,6 @@ object TareaRepository {
         }
     }
 
-    // "by lazy": se calcula la primera vez que algo lee este StateFlow,
-    // y para entonces init() ya corrió desde Application.onCreate().
     val asignaturas: StateFlow<List<Asignatura>> by lazy {
         database.asignaturaDao().obtenerTodas()
             .stateIn(repositorioScope, SharingStarted.Eagerly, emptyList())
@@ -37,7 +34,7 @@ object TareaRepository {
             .stateIn(repositorioScope, SharingStarted.Eagerly, emptyList())
     }
 
-    // ---- Asignaturas ---- (mismos nombres de función que antes, nadie más se toca)
+    // ---- Asignaturas ----
 
     fun getAllAsignaturas(): List<Asignatura> = asignaturas.value
 

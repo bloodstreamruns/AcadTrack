@@ -1,5 +1,4 @@
 package com.example.acadtrack_beta.ui.screens.login
-//validacion
 data class LoginUiState(
     val email: String = "",
     val password: String = "",

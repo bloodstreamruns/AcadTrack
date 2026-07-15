@@ -159,8 +159,7 @@ private fun TareaPendienteCard(
     }
 }
 
-// Ventana de solo lectura: mostrar detalles, no editar.
-// Editar solo está disponible desde la pantalla de Tareas.
+
 @Composable
 private fun DetalleTareaDialog(
     item: TareaConAsignatura,

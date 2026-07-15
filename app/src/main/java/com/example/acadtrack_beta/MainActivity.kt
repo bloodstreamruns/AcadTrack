@@ -42,10 +42,6 @@ import com.example.acadtrack_beta.ui.screens.tareas.TareaForm
 import com.example.acadtrack_beta.ui.screens.tareas.TareaViewModel
 import com.example.acadtrack_beta.ui.screens.tareas.TareasScreen
 
-// Rutas de todo el grafo de navegación.
-// Los formularios no reciben id por la ruta: el ViewModel compartido ya trae
-// cargarParaEditar()/limpiarFormulario(), así que MainActivity solo decide
-// CUÁNDO llamarlos antes de navegar (ver composable(Rutas.ASIGNATURAS) y TAREAS).
 private object Rutas {
     const val LOGIN = "login"
     const val HOME = "home"
@@ -56,7 +52,7 @@ private object Rutas {
     const val PERFIL = "perfil"
 }
 
-// Destinos visibles en la barra inferior, una vez el usuario inició sesión.
+
 private data class DestinoBarra(val ruta: String, val label: String, val icono: androidx.compose.ui.graphics.vector.ImageVector)
 
 private val destinosBarra = listOf(
@@ -72,8 +68,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            // Esperamos a que SesionRepository termine de leer DataStore antes
-            // de decidir si arrancamos en Login o directo en Home.
+
             val sesionLista by SesionRepository.sesionCargada.collectAsStateWithLifecycle()
 
             if (!sesionLista) {
@@ -86,9 +81,6 @@ class MainActivity : ComponentActivity() {
 
                 val navController = rememberNavController()
 
-                // ViewModels compartidos a nivel de Activity: la misma instancia
-                // se usa en el listado y en el formulario de cada feature, para
-                // que cargarParaEditar()/limpiarFormulario() surtan efecto en ambos.
                 val asignaturaViewModel: AsignaturaViewModel = viewModel()
                 val tareaViewModel: TareaViewModel = viewModel()
 

@@ -18,7 +18,6 @@ import kotlinx.coroutines.launch
 
 private val Context.dataStoreSesion by preferencesDataStore(name = "sesion_prefs")
 
-// Sesión respaldada por DataStore (Tema 6, sección 8): sobrevive a cerrar y reabrir la app.
 object SesionRepository {
 
     private val EMAIL_KEY = stringPreferencesKey("email_usuario")
@@ -27,8 +26,6 @@ object SesionRepository {
     private val _emailUsuario = MutableStateFlow<String?>(null)
     val emailUsuario: StateFlow<String?> = _emailUsuario
 
-    // Mientras esto es false, todavía no sabemos si hay sesión guardada en disco.
-    // MainActivity espera a que sea true antes de decidir la pantalla inicial.
     private val _sesionCargada = MutableStateFlow(false)
     val sesionCargada: StateFlow<Boolean> = _sesionCargada
 
