@@ -51,7 +51,7 @@ app/src/main/java/com/example/acadtrack_beta/
 
 ## Estado del proyecto
 
-Proyecto académico en desarrollo. El login actualmente solo valida formato, no autentica contra un backend real. Pendiente: filtros y búsqueda de tareas, autenticación real, y pruebas automatizadas.
+Proyecto académico en desarrollo. El login actualmente solo valida formato, no autentica contra un backend real. Pendiente: filtros y búsqueda de tareas, autenticación real, y pruebas automatizadas, implementación de notificaciones push para basadas en el nivel de prioridad de cada tarea y la cercanía de su fecha de entrega.
 
 ## Autor
 
