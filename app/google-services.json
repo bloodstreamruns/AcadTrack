@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "694046630572",
+    "project_id": "acadtrack-2daf9",
+    "storage_bucket": "acadtrack-2daf9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:694046630572:android:ad7a6f1b31af6aebf23509",
+        "android_client_info": {
+          "package_name": "com.example.acadtrack_beta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7xxAzxiahbu5lCRA5HFgxvT3tSWMCZG0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
