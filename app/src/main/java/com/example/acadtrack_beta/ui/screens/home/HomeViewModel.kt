@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import java.time.LocalDateTime
+import com.example.acadtrack_beta.data.model.Prioridad
 
 data class TareaConAsignatura(
     val tarea: Tarea,
@@ -20,8 +21,11 @@ data class HomeUiState(
     val totalAsignaturas: Int = 0,
     val tareasPendientes: List<TareaConAsignatura> = emptyList(),
     val totalPendientes: Int = 0,
-    val totalAtrasadas: Int = 0
+    val totalAtrasadas: Int = 0,
+    val conteoPorPrioridad: Map<Prioridad, Int> = emptyMap()
 )
+
+
 
 class HomeViewModel : ViewModel() {
 
@@ -43,11 +47,16 @@ class HomeViewModel : ViewModel() {
                 )
             }
 
+        val conteoPorPrioridad = pendientes
+            .groupingBy { it.tarea.prioridad }
+            .eachCount()
+
         HomeUiState(
             totalAsignaturas = asignaturas.size,
             tareasPendientes = pendientes,
             totalPendientes = pendientes.size,
-            totalAtrasadas = pendientes.count { it.atrasada }
+            totalAtrasadas = pendientes.count { it.atrasada },
+            conteoPorPrioridad = conteoPorPrioridad
         )
     }.stateIn(
         scope = viewModelScope,

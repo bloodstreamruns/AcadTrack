@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.acadtrack_beta.data.model.Prioridad
+import com.example.acadtrack_beta.ui.components.GraficoDona
 
 @Composable
 fun HomeScreen(
@@ -52,6 +54,23 @@ fun HomeScreen(
             }
 
             Spacer(Modifier.height(24.dp))
+            if (uiState.totalPendientes > 0) {
+                Text("Pendientes por prioridad", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                GraficoDona(
+                    valores = listOf(
+                        "Alta" to (uiState.conteoPorPrioridad[Prioridad.ALTA] ?: 0),
+                        "Media" to (uiState.conteoPorPrioridad[Prioridad.MEDIA] ?: 0),
+                        "Baja" to (uiState.conteoPorPrioridad[Prioridad.BAJA] ?: 0)
+                    ),
+                    colores = listOf(
+                        MaterialTheme.colorScheme.error,
+                        MaterialTheme.colorScheme.tertiary,
+                        MaterialTheme.colorScheme.primary
+                    )
+                )
+                Spacer(Modifier.height(24.dp))
+            }
             Text("Tareas pendientes", style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.height(8.dp))
 

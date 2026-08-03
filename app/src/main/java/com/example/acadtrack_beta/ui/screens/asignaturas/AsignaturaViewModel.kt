@@ -7,11 +7,40 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+
+data class AsignaturaConProgreso(
+    val asignatura: Asignatura,
+    val completadas: Int,
+    val total: Int
+)
+
 
 class AsignaturaViewModel : ViewModel() {
 
     // Ahora lee directo del repositorio compartido, no de una lista propia
     val asignaturas: StateFlow<List<Asignatura>> = TareaRepository.asignaturas
+
+    val progreso: StateFlow<List<AsignaturaConProgreso>> = combine(
+        TareaRepository.asignaturas,
+        TareaRepository.tareas
+    ) { asignaturas, tareas ->
+        asignaturas.map { asignatura ->
+            val tareasAsignatura = tareas.filter { it.asignaturaId == asignatura.id }
+            AsignaturaConProgreso(
+                asignatura = asignatura,
+                completadas = tareasAsignatura.count { it.completada },
+                total = tareasAsignatura.size
+            )
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     private val _formState = MutableStateFlow(AsignaturaFormState())
     val formState: StateFlow<AsignaturaFormState> = _formState.asStateFlow()

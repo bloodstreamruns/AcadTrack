@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.acadtrack_beta.data.model.Asignatura
+import com.example.acadtrack_beta.ui.components.BarraProgreso
 
 @Composable
 fun AsignaturasScreen(
@@ -23,6 +24,7 @@ fun AsignaturasScreen(
 ) {
     val asignaturas by viewModel.asignaturas.collectAsStateWithLifecycle()
     val mensajeError by viewModel.mensajeError.collectAsStateWithLifecycle()
+    val progreso by viewModel.progreso.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(mensajeError) {
@@ -40,29 +42,46 @@ fun AsignaturasScreen(
             }
         }
     ) { paddingValues ->
-        if (asignaturas.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = androidx.compose.ui.Alignment.Center
-            ) {
-                Text(
-                    text = "Aún no tienes asignaturas. Toca + para agregar una.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = 12.dp)
+        ) {
+            if (progreso.isNotEmpty()) {
+                item {
+                    Text("Progreso por asignatura", style = MaterialTheme.typography.titleMedium)
+                    Spacer(Modifier.height(8.dp))
+                }
+                items(progreso, key = { "progreso_${it.asignatura.id}" }) { item ->
+                    BarraProgreso(
+                        etiqueta = item.asignatura.nombre,
+                        completadas = item.completadas,
+                        total = item.total,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                }
+                item { Spacer(Modifier.height(16.dp)) }
             }
-        } else {
-            // Equivalente a RecyclerView + Adapter
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(vertical = 12.dp)
-            ) {
+
+            if (asignaturas.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        contentAlignment = androidx.compose.ui.Alignment.Center
+                    ) {
+                        Text(
+                            text = "Aún no tienes asignaturas. Toca + para agregar una.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
                 items(asignaturas, key = { it.id }) { asignatura ->
                     AsignaturaCard(
                         asignatura = asignatura,
