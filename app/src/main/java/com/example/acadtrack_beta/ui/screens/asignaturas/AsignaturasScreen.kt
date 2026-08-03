@@ -15,6 +15,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.acadtrack_beta.data.model.Asignatura
 import com.example.acadtrack_beta.ui.components.BarraProgreso
+import com.example.acadtrack_beta.ui.components.BarraBusqueda
 
 @Composable
 fun AsignaturasScreen(
@@ -26,6 +27,8 @@ fun AsignaturasScreen(
     val mensajeError by viewModel.mensajeError.collectAsStateWithLifecycle()
     val progreso by viewModel.progreso.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
+    val asignaturasFiltradas by viewModel.asignaturasFiltradas.collectAsStateWithLifecycle()
+    val textoBusqueda by viewModel.textoBusqueda.collectAsStateWithLifecycle()
 
     LaunchedEffect(mensajeError) {
         mensajeError?.let {
@@ -50,6 +53,14 @@ fun AsignaturasScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(vertical = 12.dp)
         ) {
+            item {
+                BarraBusqueda(
+                    texto = textoBusqueda,
+                    onTextoChanged = viewModel::onTextoBusquedaChanged,
+                    placeholder = "Buscar asignaturas...",
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
             if (progreso.isNotEmpty()) {
                 item {
                     Text("Progreso por asignatura", style = MaterialTheme.typography.titleMedium)
@@ -81,8 +92,23 @@ fun AsignaturasScreen(
                         )
                     }
                 }
+            } else if (asignaturasFiltradas.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        contentAlignment = androidx.compose.ui.Alignment.Center
+                    ) {
+                        Text(
+                            text = "No se encontraron asignaturas para \"$textoBusqueda\".",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             } else {
-                items(asignaturas, key = { it.id }) { asignatura ->
+                items(asignaturasFiltradas, key = { it.id }) { asignatura ->
                     AsignaturaCard(
                         asignatura = asignatura,
                         onEditar = { onEditarClick(asignatura) },

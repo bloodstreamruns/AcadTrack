@@ -13,12 +13,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.acadtrack_beta.data.model.Prioridad
 import com.example.acadtrack_beta.ui.components.GraficoDona
+import com.example.acadtrack_beta.ui.components.BarraBusqueda
 
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val textoBusqueda by viewModel.textoBusqueda.collectAsStateWithLifecycle()
     var tareaSeleccionada by remember { mutableStateOf<TareaConAsignatura?>(null) }
 
     Scaffold { paddingValues ->
@@ -29,6 +31,13 @@ fun HomeScreen(
                 .padding(16.dp)
         ) {
             Text("Inicio", style = MaterialTheme.typography.headlineMedium)
+            Spacer(Modifier.height(16.dp))
+
+            BarraBusqueda(
+                texto = textoBusqueda,
+                onTextoChanged = viewModel::onTextoBusquedaChanged,
+                placeholder = "Buscar tareas..."
+            )
             Spacer(Modifier.height(16.dp))
 
             Row(
@@ -82,7 +91,10 @@ fun HomeScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No tienes tareas pendientes.",
+                        text = if (textoBusqueda.isNotBlank())
+                            "No se encontraron tareas para \"$textoBusqueda\"."
+                        else
+                            "No tienes tareas pendientes.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

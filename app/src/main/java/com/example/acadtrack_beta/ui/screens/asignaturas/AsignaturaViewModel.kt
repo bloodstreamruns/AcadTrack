@@ -11,6 +11,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import com.example.acadtrack_beta.ui.util.coincideConBusqueda
 
 data class AsignaturaConProgreso(
     val asignatura: Asignatura,
@@ -41,6 +42,31 @@ class AsignaturaViewModel : ViewModel() {
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    private val _textoBusqueda = MutableStateFlow("")
+    val textoBusqueda: StateFlow<String> = _textoBusqueda
+
+    // "asignaturas" (sin filtrar) sigue existiendo tal cual para el resto de la pantalla.
+// Esta es la versión filtrada, exclusiva para la lista de tarjetas visible.
+    val asignaturasFiltradas: StateFlow<List<Asignatura>> = combine(
+        TareaRepository.asignaturas,
+        _textoBusqueda
+    ) { asignaturas, texto ->
+        asignaturas.filter { asignatura ->
+            coincideConBusqueda(
+                texto,
+                listOf(asignatura.nombre, asignatura.codigo, asignatura.profesor, asignatura.semestre)
+            )
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun onTextoBusquedaChanged(texto: String) {
+        _textoBusqueda.value = texto
+    }
 
     private val _formState = MutableStateFlow(AsignaturaFormState())
     val formState: StateFlow<AsignaturaFormState> = _formState.asStateFlow()

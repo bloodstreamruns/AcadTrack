@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.acadtrack_beta.data.model.Tarea
+import com.example.acadtrack_beta.ui.components.BarraBusqueda
 
 @Composable
 fun TareasScreen(
@@ -25,6 +26,8 @@ fun TareasScreen(
 ) {
     val tareas by viewModel.tareas.collectAsStateWithLifecycle()
     val asignaturas by viewModel.asignaturas.collectAsStateWithLifecycle()
+    val tareasFiltradas by viewModel.tareasFiltradas.collectAsStateWithLifecycle()
+    val textoBusqueda by viewModel.textoBusqueda.collectAsStateWithLifecycle()
 
     Scaffold(
         floatingActionButton = {
@@ -33,27 +36,51 @@ fun TareasScreen(
             }
         }
     ) { paddingValues ->
-        if (tareas.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Aún no tienes tareas. Toca + para agregar una.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = 12.dp)
+        ) {
+            item {
+                BarraBusqueda(
+                    texto = textoBusqueda,
+                    onTextoChanged = viewModel::onTextoBusquedaChanged,
+                    placeholder = "Buscar tareas...",
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(vertical = 12.dp)
-            ) {
-                items(tareas, key = { it.id }) { tarea ->
+
+            if (tareas.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Aún no tienes tareas. Toca + para agregar una.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else if (tareasFiltradas.isEmpty()) {
+                item {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No se encontraron tareas para \"$textoBusqueda\".",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                items(tareasFiltradas, key = { it.id }) { tarea ->
                     val nombreAsignatura = asignaturas.find { it.id == tarea.asignaturaId }?.nombre
                         ?: "Sin asignatura"
                     TareaCard(

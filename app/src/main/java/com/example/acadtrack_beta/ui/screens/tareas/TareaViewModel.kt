@@ -13,11 +13,49 @@ import kotlinx.coroutines.flow.update
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.UUID
+import androidx.lifecycle.viewModelScope
+import com.example.acadtrack_beta.ui.util.coincideConBusqueda
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 
 class TareaViewModel : ViewModel() {
 
     val tareas: StateFlow<List<Tarea>> = TareaRepository.tareas
     val asignaturas: StateFlow<List<Asignatura>> = TareaRepository.asignaturas
+    private val _textoBusqueda = MutableStateFlow("")
+    val textoBusqueda: StateFlow<String> = _textoBusqueda
+
+    // "tareas" (sin filtrar) sigue disponible tal cual. Esta es la versión filtrada
+// para la lista visible; también busca por el nombre de la asignatura relacionada.
+    val tareasFiltradas: StateFlow<List<Tarea>> = combine(
+        TareaRepository.tareas,
+        TareaRepository.asignaturas,
+        _textoBusqueda
+    ) { tareas, asignaturas, texto ->
+        tareas.filter { tarea ->
+            val nombreAsignatura = asignaturas.find { it.id == tarea.asignaturaId }?.nombre ?: ""
+            coincideConBusqueda(
+                texto,
+                listOf(
+                    tarea.titulo,
+                    tarea.descripcion,
+                    tarea.notas,
+                    nombreAsignatura,
+                    tarea.tipo.name,
+                    tarea.prioridad.name
+                )
+            )
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    fun onTextoBusquedaChanged(texto: String) {
+        _textoBusqueda.value = texto
+    }
 
     private val _formState = MutableStateFlow(TareaFormState())
     val formState: StateFlow<TareaFormState> = _formState.asStateFlow()
