@@ -2,7 +2,7 @@ package com.example.acadtrack_beta.ui.util
 
 import java.text.Normalizer
 
-// Quita tildes/diacríticos y pasa a minúsculas, para que "matematica" encuentre "Matemática".
+// Quita tildes/diacríticos y pasa a minúsculas.
 fun String.normalizarBusqueda(): String {
     val sinTildes = Normalizer.normalize(this, Normalizer.Form.NFD)
         .replace(Regex("\\p{Mn}+"), "")
