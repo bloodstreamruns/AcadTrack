@@ -14,6 +14,17 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.acadtrack_beta.data.model.Prioridad
 import com.example.acadtrack_beta.ui.components.GraficoDona
 import com.example.acadtrack_beta.ui.components.BarraBusqueda
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Schedule
+
 
 @Composable
 fun HomeScreen(
@@ -44,22 +55,9 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                ResumenCard(
-                    titulo = "Asignaturas",
-                    valor = uiState.totalAsignaturas.toString(),
-                    modifier = Modifier.weight(1f)
-                )
-                ResumenCard(
-                    titulo = "Pendientes",
-                    valor = uiState.totalPendientes.toString(),
-                    modifier = Modifier.weight(1f)
-                )
-                ResumenCard(
-                    titulo = "Atrasadas",
-                    valor = uiState.totalAtrasadas.toString(),
-                    modifier = Modifier.weight(1f),
-                    esAlerta = uiState.totalAtrasadas > 0
-                )
+                ResumenCard(Icons.Filled.School, Color(0xFF2E7D6B), "Asignaturas", uiState.totalAsignaturas.toString(), Modifier.weight(1f))
+                ResumenCard(Icons.Filled.Assignment, Color(0xFFE8A33D), "Pendientes", uiState.totalPendientes.toString(), Modifier.weight(1f))
+                ResumenCard(Icons.Filled.Schedule, Color(0xFFD64545), "Atrasadas", uiState.totalAtrasadas.toString(), Modifier.weight(1f))
             }
 
             Spacer(Modifier.height(24.dp))
@@ -125,10 +123,11 @@ fun HomeScreen(
 
 @Composable
 private fun ResumenCard(
+    icono: androidx.compose.ui.graphics.vector.ImageVector,
+    colorIcono: Color,
     titulo: String,
     valor: String,
-    modifier: Modifier = Modifier,
-    esAlerta: Boolean = false
+    modifier: Modifier = Modifier
 ) {
     Card(modifier = modifier) {
         Column(
@@ -137,16 +136,17 @@ private fun ResumenCard(
                 .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = valor,
-                style = MaterialTheme.typography.headlineMedium,
-                color = if (esAlerta) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = titulo,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(colorIcono.copy(alpha = 0.15f), shape = CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(icono, contentDescription = null, tint = colorIcono)
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(valor, style = MaterialTheme.typography.headlineMedium)
+            Text(titulo, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }

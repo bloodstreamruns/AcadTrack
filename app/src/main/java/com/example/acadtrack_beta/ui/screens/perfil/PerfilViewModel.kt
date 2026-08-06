@@ -2,7 +2,7 @@ package com.example.acadtrack_beta.ui.screens.perfil
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.acadtrack_beta.data.repository.SesionRepository
+import com.example.acadtrack_beta.data.repository.AuthRepository
 import com.example.acadtrack_beta.data.repository.TareaRepository
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -22,12 +22,12 @@ data class PerfilUiState(
 class PerfilViewModel : ViewModel() {
 
     val uiState: StateFlow<PerfilUiState> = combine(
-        SesionRepository.emailUsuario,
+        AuthRepository.usuarioActual,
         TareaRepository.asignaturas,
         TareaRepository.tareas
-    ) { email, asignaturas, tareas ->
+    ) { usuario, asignaturas, tareas ->
         PerfilUiState(
-            email = email ?: "",
+            email = usuario?.email ?: "",
             totalAsignaturas = asignaturas.size,
             totalTareas = tareas.size,
             tareasCompletadas = tareas.count { it.completada }
@@ -39,6 +39,6 @@ class PerfilViewModel : ViewModel() {
     )
 
     fun cerrarSesion() {
-        SesionRepository.cerrarSesion()
+        AuthRepository.cerrarSesion()
     }
 }

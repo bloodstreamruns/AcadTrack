@@ -13,6 +13,7 @@ enum class Prioridad {
 
 data class Tarea(
     val id: String = UUID.randomUUID().toString(),
+    val userId: String = "",
     val titulo: String = "",
     val descripcion: String = "",
     val asignaturaId: String = "",

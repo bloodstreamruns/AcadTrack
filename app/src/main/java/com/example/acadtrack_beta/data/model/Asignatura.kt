@@ -4,6 +4,7 @@ import java.util.UUID
 
 data class Asignatura(
     val id: String = UUID.randomUUID().toString(),
+    val userId: String = "",
     val nombre: String = "",
     val codigo: String = "",
     val profesor: String = "",

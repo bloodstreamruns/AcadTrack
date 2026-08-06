@@ -8,7 +8,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import com.example.acadtrack_beta.data.repository.SesionRepository
+import com.example.acadtrack_beta.data.repository.AuthRepository
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
 
 
 class LoginViewModel : ViewModel() {
@@ -46,31 +48,18 @@ class LoginViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, generalError = null) }
 
-            try {
-
-                delay(1200)
-
-                val loginExitoso = true
-
-                if (loginExitoso) {
-                    SesionRepository.iniciarSesion(_uiState.value.email.trim())
+            AuthRepository.iniciarSesion(_uiState.value.email.trim(), _uiState.value.password)
+                .onSuccess {
                     _uiState.update { it.copy(isLoading = false, isLoginSuccessful = true) }
-                } else {
-                    _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            generalError = "Correo o contraseña incorrectos"
-                        )
+                }
+                .onFailure { error ->
+                    val mensaje = when (error) {
+                        is FirebaseAuthInvalidUserException -> "No existe una cuenta con ese correo"
+                        is FirebaseAuthInvalidCredentialsException -> "Correo o contraseña incorrectos"
+                        else -> "Error de conexión. Intenta de nuevo."
                     }
+                    _uiState.update { it.copy(isLoading = false, generalError = mensaje) }
                 }
-            } catch (_: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        generalError = "Error de conexión. Intenta de nuevo."
-                    )
-                }
-            }
         }
     }
 

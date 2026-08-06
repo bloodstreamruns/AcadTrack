@@ -9,63 +9,66 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
-// Fuente única de datos para Asignaturas y Tareas, ahora respaldada por Firestore.
+@OptIn(ExperimentalCoroutinesApi::class)
 object TareaRepository {
 
     private val db = FirebaseFirestore.getInstance()
-    private val coleccionAsignaturas = db.collection("asignaturas")
-    private val coleccionTareas = db.collection("tareas")
-
     private val repositorioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    // Lecturas en tiempo real: addSnapshotListener es el equivalente en Firestore
-    // al Flow que nos daba Room — cualquier cambio remoto llega solo, sin refrescar nada.
-    val asignaturas: StateFlow<List<Asignatura>> = callbackFlow {
-        val listener = coleccionAsignaturas.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                trySend(emptyList())
-                return@addSnapshotListener
-            }
-            val lista = snapshot?.documents
-                ?.mapNotNull { it.toObject(Asignatura::class.java) }
-                ?.sortedBy { it.nombre }
-                ?: emptyList()
-            trySend(lista)
+    val asignaturas: StateFlow<List<Asignatura>> = AuthRepository.usuarioActual
+        .flatMapLatest { usuario ->
+            if (usuario == null) flowOf(emptyList()) else observarAsignaturas(usuario.uid)
         }
-        awaitClose { listener.remove() }
-    }.stateIn(repositorioScope, SharingStarted.Eagerly, emptyList())
+        .stateIn(repositorioScope, SharingStarted.Eagerly, emptyList())
 
-    val tareas: StateFlow<List<Tarea>> = callbackFlow {
-        val listener = coleccionTareas.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                trySend(emptyList())
-                return@addSnapshotListener
-            }
-            val lista = snapshot?.documents
-                ?.mapNotNull { documentoATarea(it) }
-                ?.sortedBy { it.fechaEntrega }
-                ?: emptyList()
-            trySend(lista)
+    val tareas: StateFlow<List<Tarea>> = AuthRepository.usuarioActual
+        .flatMapLatest { usuario ->
+            if (usuario == null) flowOf(emptyList()) else observarTareas(usuario.uid)
         }
-        awaitClose { listener.remove() }
-    }.stateIn(repositorioScope, SharingStarted.Eagerly, emptyList())
+        .stateIn(repositorioScope, SharingStarted.Eagerly, emptyList())
 
-    // ---- Asignaturas ---- (mismos nombres de función de siempre)
+    private fun observarAsignaturas(uid: String): Flow<List<Asignatura>> = callbackFlow {
+        val listener = db.collection("asignaturas")
+            .whereEqualTo("userId", uid)
+            .addSnapshotListener { snapshot, _ ->
+                val lista = snapshot?.documents?.mapNotNull { it.toObject(Asignatura::class.java) }
+                    ?.sortedBy { it.nombre } ?: emptyList()
+                trySend(lista)
+            }
+        awaitClose { listener.remove() }
+    }
+
+    private fun observarTareas(uid: String): Flow<List<Tarea>> = callbackFlow {
+        val listener = db.collection("tareas")
+            .whereEqualTo("userId", uid)
+            .addSnapshotListener { snapshot, _ ->
+                val lista = snapshot?.documents?.mapNotNull { documentoATarea(it) }
+                    ?.sortedBy { it.fechaEntrega } ?: emptyList()
+                trySend(lista)
+            }
+        awaitClose { listener.remove() }
+    }
 
     fun getAllAsignaturas(): List<Asignatura> = asignaturas.value
 
     fun guardarAsignatura(asignatura: Asignatura) {
-        coleccionAsignaturas.document(asignatura.id)
-            .set(asignatura)
+        val uid = AuthRepository.uid ?: return
+        val conUsuario = asignatura.copy(userId = uid)
+        db.collection("asignaturas").document(conUsuario.id)
+            .set(conUsuario)
             .addOnFailureListener { it.printStackTrace() }
     }
 
@@ -73,13 +76,11 @@ object TareaRepository {
         val tienePendientes = tareas.value.any { it.asignaturaId == id && !it.completada }
         if (tienePendientes) return false
 
-        coleccionAsignaturas.document(id)
+        db.collection("asignaturas").document(id)
             .delete()
             .addOnFailureListener { it.printStackTrace() }
         return true
     }
-
-    // ---- Tareas ----
 
     fun getAllTareas(): List<Tarea> = tareas.value
 
@@ -87,23 +88,21 @@ object TareaRepository {
         tareas.value.filter { it.asignaturaId == asignaturaId }
 
     fun guardarTarea(tarea: Tarea) {
-        coleccionTareas.document(tarea.id)
-            .set(tareaAMapa(tarea))
+        val uid = AuthRepository.uid ?: return
+        db.collection("tareas").document(tarea.id)
+            .set(tareaAMapa(tarea.copy(userId = uid)))
             .addOnFailureListener { it.printStackTrace() }
     }
 
     fun eliminarTarea(id: String) {
-        coleccionTareas.document(id)
+        db.collection("tareas").document(id)
             .delete()
             .addOnFailureListener { it.printStackTrace() }
     }
 
-    // ---- Conversión manual de Tarea ----
-    // Firestore no sabe mapear LocalDateTime ni enums automáticamente con toObject(),
-    // así que aquí se convierte a mano (fechaEntrega <-> Timestamp, enums <-> texto).
-
     private fun tareaAMapa(tarea: Tarea): Map<String, Any?> = mapOf(
         "id" to tarea.id,
+        "userId" to tarea.userId,
         "titulo" to tarea.titulo,
         "descripcion" to tarea.descripcion,
         "asignaturaId" to tarea.asignaturaId,
@@ -118,6 +117,7 @@ object TareaRepository {
         val fecha = documento.getTimestamp("fechaEntrega") ?: return null
         return Tarea(
             id = documento.id,
+            userId = documento.getString("userId") ?: "",
             titulo = documento.getString("titulo") ?: "",
             descripcion = documento.getString("descripcion") ?: "",
             asignaturaId = documento.getString("asignaturaId") ?: "",
